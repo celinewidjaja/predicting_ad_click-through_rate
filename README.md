@@ -55,11 +55,11 @@ Applied multiple techniques to identify key predictors:
 
 #### **3. Model Development:**
 Progressed through increasingly sophisticated approaches:  
-- Linear regression with polynomial terms  
+- Linear regression with polynomial terms
+- Generalized Additive Models (GAM) 
 - Bagging  
 - Random forest  
-- Gradient boosting (XGBoost)  
-- Generalized Additive Models (GAM)  
+- XGBoost 
 
 #### **4. Variable Engineering:**
 Created composite metrics including:  
@@ -110,7 +110,6 @@ Through iterative refinement, our modeling approach evolved:
 
 4. **Tree-Based Models**  
    - **Random Forest**: RMSE of 0.0645 (cross-validation)  
-   - **Gradient Boosting Machine (GBM)**: RMSE of 0.0628 (cross-validation)  
    - **Bagging**: RMSE of 0.0731 (cross-validation)  
 
 5. **XGBoost Model**  
@@ -122,7 +121,6 @@ Through iterative refinement, our modeling approach evolved:
 | Linear Regression      | 0.1058                 |
 | Polynomial Linear Model| 0.0654                 |
 | GAM                    | 0.0679                 |
-| Gradient Boosting (GBM)| 0.0628                 |
 | Random Forest          | 0.0645                 |
 | Bagging                | 0.0731                 |
 | XGBoost                | 0.0590                 |
