@@ -5,10 +5,13 @@
 This analysis develops a machine learning solution to predict and optimize Click-Through Rates (CTR) for digital advertising campaigns. Using comprehensive campaign data including ad characteristics, audience demographics, and engagement metrics, we've created a predictive model that helps maximize advertising ROI through data-driven targeting and content optimization.
 
 ## How to Use This Project
-1. Clone this repository: `git clone https://https://github.com/celinewidjaja/predicting_ad_click-through_rate`
-2. Install required dependencies using `requirements.txt` or `environment.yml`.
-3. Run the preprocessing and modeling scripts located in the `src/` folder.
-4. Access the analysis results in the `output/` folder.
+1. Clone this repository: `git clone https://github.com/celinewidjaja/predicting_ad_click-through_rate`
+2. Install required dependencies using `requirements.txt` or `environment.yml`:
+   - If using pip: `pip install -r requirements.txt`
+   - If using conda: `conda env create -f environment.yml`
+3. Run any model script from the `src/` folder:
+   - Example: `Rscript src/PAC_gam.R`
+4. Access outputs (predictions, visualizations) in the `output/` folder.
 
 ## Data Structure Overview
 
