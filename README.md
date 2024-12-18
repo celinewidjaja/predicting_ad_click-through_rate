@@ -104,28 +104,28 @@ Through iterative refinement, our modeling approach evolved:
 
 2. **Polynomial Linear Model**  
    - After adding polynomial terms to capture non-linear relationships: RMSE improved to 0.06539632  
+   
+3. **GAM Model for Non-Linear Patterns**  
+   - GAM achieved a cross-validation RMSE of 0.06799151.
 
-3. **Tree-Based Models**  
+4. **Tree-Based Models**  
    - **Random Forest**: RMSE of 0.0645 (cross-validation)  
    - **Gradient Boosting Machine (GBM)**: RMSE of 0.0628 (cross-validation)  
    - **Bagging**: RMSE of 0.0731 (cross-validation)  
 
-4. **XGBoost Model**  
+5. **XGBoost Model**  
    - Cross-validation RMSE: 0.05903
-
-5. **GAM Model for Non-Linear Patterns**  
-   - GAM achieved a cross-validation RMSE of 0.0573, outperforming tree-based models.
 
 ### Model Comparison Summary
 | Model                  | Cross-Validation RMSE |
 |------------------------|------------------------|
-| Linear Regression      | 0.0654                 |
+| Linear Regression      | 0.1058                 |
 | Polynomial Linear Model| 0.0654                 |
-| XGBoost                | 0.0590                 |
+| GAM                    | 0.0679                 |
 | Gradient Boosting (GBM)| 0.0628                 |
 | Random Forest          | 0.0645                 |
 | Bagging                | 0.0731                 |
-| GAM                    | 0.0573                 |
+| XGBoost                | 0.0590                 |
 
 ## Recommendations
 
@@ -150,9 +150,9 @@ Through iterative refinement, our modeling approach evolved:
    - Adjust for seasonality by aligning ad themes with relevant holidays or events to maximize contextual engagement.
 
 5. **Timing Strategy**  
-   - GAM highlights the dynamic nature of variables influencing CTR, suggesting the need for ongoing refinement.  
+   - Xgboost highlights the dynamic nature of variables influencing CTR, suggesting the need for ongoing refinement.  
    - Monitor campaigns regularly and adjust strategies.
-   - Implement feedback loops where campaign performance informs future GAM training for improved predictive accuracy.
+   - Implement feedback loops where campaign performance informs future Xgboost training for improved predictive accuracy.
    
 ## Caveats & Assumptions
 The analysis assumes consistent measurement of subjective metrics like visual appeal and targeting score. The model's performance may vary with changes in market conditions or consumer behavior. Geographic and demographic patterns might reflect current campaign targeting rather than inherent preferences. Additional data on user behavior and long-term engagement would strengthen these findings.
