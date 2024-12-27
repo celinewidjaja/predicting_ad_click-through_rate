@@ -103,7 +103,7 @@ categorical_vars <- c("contextual_relevance", "age_group", "gender", "location",
 
 # Apply range validation and capping to numeric variables
 for(var in numeric_vars) {
-  analysis_data <- validate_numeric(analysis_data, var$col, var$min, var$max, var$cap)
+  analysis_data <- analyze_numeric(analysis_data, var$col, var$min, var$max, var$cap)
 }
 
 # ====================================
