@@ -18,11 +18,6 @@ library(tidyverse)
 library(forcats)
 library(janitor)
 
-#Add directory creation
-if (!dir.exists("output")) {
-  dir.create("output")
-}
-
 # Set random seed for reproducibility
 set.seed(1031)
 
@@ -30,7 +25,7 @@ set.seed(1031)
 # Data loading and initial inspection
 # ====================================
 
-# Import the training (analysis) and testing (scoring) datasets
+# Import the dataset
 analysis_data = read.csv('data/analysis_data.csv', stringsAsFactors = TRUE)
 
 # Examine data structure
@@ -44,7 +39,7 @@ str(analysis_data)
 cols_to_factor <- c("contextual_relevance", "seasonality", "headline_power_words",
                     "headline_question", "headline_numbers")
 
-# Convert specified columns to factors in both datasets
+# Convert specified columns to factors
 analysis_data[cols_to_factor] <- lapply(analysis_data[cols_to_factor], as.factor)
 
 #===============================================
@@ -57,7 +52,7 @@ analysis_data %>%
   count() %>%
   filter(n==1) # Confirms no duplicates - all 4,000 rows have unique IDs
 
-# Evaluate missing data in both datasets
+# Evaluate missing data
 skim(analysis_data)
 
 # ====================================
@@ -246,8 +241,10 @@ print(analysis_data_plot)
 # Train-Test Split
 #===============================================
 
-# Create 80-20 split for training and testing
+# Set seed
 set.seed(1031)
+
+# Split data into training (80%) and test (20%) sets
 split = createDataPartition(y = analysis_data_transformed$CTR, p = 0.8, list = F)
 train = analysis_data_transformed[split,]
 test = analysis_data_transformed[-split,]
@@ -391,6 +388,7 @@ cat("Test RMSE:", round(rmse_test, 6), "\n")
 analysis_input = prepare(treatmentplan = trt,
                          dframe = analysis_data_transformed,
                          varRestriction = newvars)
+
 predictions <- predict(final_model, as.matrix(analysis_input))
 
 # Create submission with all predictions
