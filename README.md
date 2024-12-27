@@ -44,8 +44,8 @@ This analysis develops a machine learning solution to predict and optimize Click
 
 #### **1. Data Preprocessing:**
 - Identified missing data, outliers, and out of range data
-- Handled missing values using bag imputation (for final model).
--    Preliminary models used a mix of bag, mean imputation, and proportion handling.
+- Handled missing values using bag imputation (for final model)
+- Preliminary models used a mix of bag, mean imputation, and proportion handling
 - Treated outliers through capping where appropriate
 - Standardized numeric variables
 - Created dummy variables for categorical features
