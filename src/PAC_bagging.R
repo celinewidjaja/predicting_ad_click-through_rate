@@ -230,4 +230,4 @@ submission <- data.frame(
 )
 
 # Save predictions to CSV
-write.csv(submission, "output/submission_bag.csv", row.names = FALSE)
+write.csv(submission, "output/prediction_bag.csv", row.names = FALSE)
