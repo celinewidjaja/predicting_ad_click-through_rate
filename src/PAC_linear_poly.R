@@ -554,4 +554,4 @@ submission <- data.frame(
 )
 
 # Save with relative path
-write.csv(submission, "output/submission_linearpoly.csv", row.names = FALSE)
+write.csv(submission, "output/prediction_linearpoly.csv", row.names = FALSE)
