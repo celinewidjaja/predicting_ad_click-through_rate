@@ -15,7 +15,7 @@ set.seed(1031)
 # ====================================
 
 # Load analysis and scoring datasets
-analysis_data = read.csv('/Users/celinewidjaja/Desktop/predicting-clicks/analysis_data.csv', stringsAsFactors = TRUE)
+analysis_data = read.csv('data/analysis_data.csv', stringsAsFactors = TRUE)
 
 # Examine data structure
 str(analysis_data)
