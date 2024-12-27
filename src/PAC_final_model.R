@@ -1,37 +1,40 @@
-#===============================================
-# Initial Setup and Library Loading
-#===============================================
-# Load libraries for data manipulation, visualization, and modeling
-library(skimr)        # For data summaries
-library(dplyr)        # For data manipulation
-library(readr)        # For reading data
-library(ggplot2)      # For visualization
-library(lattice)      # For visualization
-library(caret)        # For machine learning
-library(recipes)      # For feature engineering
-library(vtreat)       # For data treatment
-library(xgboost)      # For gradient boosting
-library(Matrix)       # For sparse matrices
-library(tidyr)        # For data tidying
-library(tidyverse)    # For data manipulation
-library(forcats)      # For factor manipulation
-library(mgcv)         # For GAM models
-library(gridExtra)    # For arranging plots
-library(janitor)      # For cleaning column names
+# ====================================
+# Setup and initialization
+# ====================================
+
+# Import required libraries for data manipulation, visualization, and modeling
+library(skimr)
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(lattice)
+library(caret)
+library(recipes)
+library(vtreat)
+library(xgboost)
+library(Matrix)
+library(tidyr)
+library(tidyverse)
+library(forcats)
+library(janitor)
+
+#Add directory creation
+if (!dir.exists("output")) {
+  dir.create("output")
+}
 
 # Set random seed for reproducibility
 set.seed(1031)
 
-#===============================================
-# Data Loading and Initial Inspection
-#===============================================
-# Load analysis and scoring datasets
-analysis_data = read.csv('/Users/celinewidjaja/Desktop/predicting-clicks/analysis_data.csv', stringsAsFactors = TRUE)
-scoring_data = read.csv('/Users/celinewidjaja/Desktop/predicting-clicks/scoring_data.csv', stringsAsFactors = TRUE)
+# ====================================
+# Data loading and initial inspection
+# ====================================
 
-# Inspect data structure
+# Import the training (analysis) and testing (scoring) datasets
+analysis_data = read.csv('/Users/celinewidjaja/Desktop/predicting-clicks/analysis_data.csv', stringsAsFactors = TRUE)
+
+# Examine data structure
 str(analysis_data)
-str(scoring_data)
 
 #===============================================
 # Data Type Conversion
@@ -42,7 +45,6 @@ cols_to_factor <- c("contextual_relevance", "seasonality", "headline_power_words
 
 # Convert specified columns to factors in both datasets
 analysis_data[cols_to_factor] <- lapply(analysis_data[cols_to_factor], as.factor)
-scoring_data[cols_to_factor] <- lapply(scoring_data[cols_to_factor], as.factor)
 
 #===============================================
 # Data Quality Checks
@@ -55,62 +57,33 @@ analysis_data %>%
 
 # Evaluate missing data in both datasets
 skim(analysis_data)
-skim(scoring_data)
 
-#===============================================
-# Outlier Analysis
-#===============================================
-# Create boxplot to identify CTR outliers
-ggplot(data=analysis_data_transformed, aes(x='', y=CTR)) +
-  geom_boxplot(outlier.color='red', outlier.alpha=0.5, fill='cadetblue') +
-  geom_text(aes(x='', y=median(analysis_data_transformed$CTR), 
-                label=median(analysis_data_transformed$CTR)), size=3, hjust=11) +
-  xlab(label = '') +
-  theme_bw() +
-  labs(title = 'Identify Outliers', x = '')
+# ====================================
+# Data validation and range checking
+# ====================================
 
-#===============================================
-# Define Data Validation Function
-#===============================================
-# Function to analyze and handle out-of-range values
-analyze_numeric <- function(analysis_df, scoring_df, column, min_val, max_val, cap) {
-  # Calculate correlation with CTR (if not CTR column)
+# Function to analyze correlations with target and handle out-of-range values
+analyze_numeric <- function(analysis_df, column, min_val, max_val, cap) {
+  # Check correlation with target variable (CTR)
   if(column != "CTR") {
     orig_cor <- cor(analysis_df[[column]], analysis_df$CTR, use = "complete.obs")
-    cat(sprintf("\nOriginal correlation with CTR for %s: %.3f\n", column, orig_cor))
+    cat(sprintf("\nCorrelation with CTR for %s: %.3f\n", column, orig_cor))
   }
   
-  # Check for out-of-range values
+  # Count values outside valid range
   out_range_analysis <- sum(analysis_df[[column]] < min_val | analysis_df[[column]] > max_val, na.rm = TRUE)
-  out_range_scoring <- sum(scoring_df[[column]] < min_val | scoring_df[[column]] > max_val, na.rm = TRUE)
-  cat(sprintf("\n## %s:\n", column))
-  cat(sprintf("Analysis: %d out of range values\n", out_range_analysis))
-  cat(sprintf("Scoring: %d out of range values\n", out_range_scoring))
+  cat(sprintf("\n%s: %d out of range values\n", column, out_range_analysis))
   
-  # Cap values if specified
+  # Cap values at min/max if specified
   if(cap) {
     analysis_df[[column]] <- ifelse(analysis_df[[column]] < min_val, min_val,
                                     ifelse(analysis_df[[column]] > max_val, max_val, 
                                            analysis_df[[column]]))
-    if(column != "CTR") {
-      scoring_df[[column]] <- ifelse(scoring_df[[column]] < min_val, min_val,
-                                     ifelse(scoring_df[[column]] > max_val, max_val, 
-                                            scoring_df[[column]]))
-      
-      # Recalculate correlation after capping
-      new_cor <- cor(analysis_df[[column]], analysis_df$CTR, use = "complete.obs")
-      cat(sprintf("Correlation after capping: %.3f\n", new_cor))
-    }
-    cat(sprintf("Values capped for %s\n", column))
   }
-  
-  return(list(analysis_df = analysis_df, scoring_df = scoring_df))
+  return(analysis_df)
 }
 
-#===============================================
-# Define Variables for Validation
-#===============================================
-# List of numeric variables with their valid ranges and capping rules
+# Define valid ranges and capping rules for numeric variables
 numeric_vars <- list(
   list(col = "targeting_score", min = 1, max = 10, cap = FALSE),
   list(col = "visual_appeal", min = 1, max = 10, cap = FALSE), 
@@ -119,28 +92,29 @@ numeric_vars <- list(
   list(col = "market_saturation", min = 1, max = 10, cap = TRUE),
   list(col = "body_keyword_density", min = 0, max = 1, cap = FALSE),
   list(col = "body_readability_score", min = 1, max = 100, cap = FALSE),
-  list(col = "CTR", min = 0, max = 1, cap = TRUE)  # CTR always capped between 0-1
+  list(col = "CTR", min = 0, max = 1, cap = TRUE)  # Target variable
 )
 
-#===============================================
-# Data Validation and Cleaning
-#===============================================
-# Process all numeric variables
+# Define categorical variables
+categorical_vars <- c("contextual_relevance", "age_group", "gender", "location",
+                      "headline_power_words", "headline_question", "headline_numbers",
+                      "seasonality")
+
+# Apply range validation and capping to numeric variables
 for(var in numeric_vars) {
-  results <- analyze_numeric(analysis_data, scoring_data, var$col, var$min, var$max, var$cap)
-  analysis_data <- results$analysis_df
-  scoring_data <- results$scoring_df
+  analysis_data <- analyze_numeric(analysis_data, var$col, var$min, var$max, var$cap)
 }
+
+# ====================================
+# Range validation for special variables
+# ====================================
 
 # Check variables that should be between 0 and 1
 zero_one_vars <- c("body_keyword_density", "body_readability_score")
 for(var in zero_one_vars) {
   analysis_range <- any(analysis_data[[var]] > 1 | analysis_data[[var]] < 0, na.rm = TRUE)
-  scoring_range <- any(scoring_data[[var]] > 1 | scoring_data[[var]] < 0, na.rm = TRUE)
   
-  cat(sprintf("\n## %s range check:\n", var))
-  cat("Analysis data out of range:", analysis_range, "\n")
-  cat("Scoring data out of range:", scoring_range, "\n")
+  cat(sprintf("\n## %s range check:\n", var, analysis_range))
 }
 
 #===============================================
@@ -154,35 +128,6 @@ analysis_data <- analysis_data %>%
     # Binary indicator for peak hours
     peak_hour = ifelse(time_of_day %in% c("Morning", "Afternoon"), 1, 0)
   )
-
-# Create same features in scoring data
-scoring_data <- scoring_data %>%
-  mutate(
-    content_score = (visual_appeal + targeting_score + cta_strength) / 3,
-    peak_hour = ifelse(time_of_day %in% c("Morning", "Afternoon"), 1, 0)
-  )
-
-#===============================================
-# Factor Level Harmonization
-#===============================================
-# Ensure factor levels are consistent between datasets
-categorical_cols <- names(analysis_data)[sapply(analysis_data, is.factor)]
-
-for (col in categorical_cols) {
-  if (col %in% names(scoring_data)) {
-    # Convert to character temporarily
-    analysis_data[[col]] <- as.character(analysis_data[[col]])
-    scoring_data[[col]] <- as.character(scoring_data[[col]])
-    
-    # Get all unique levels
-    all_levels <- unique(c(analysis_data[[col]], scoring_data[[col]]))
-    all_levels <- all_levels[!is.na(all_levels)]
-    
-    # Convert back to factor with harmonized levels
-    analysis_data[[col]] <- factor(analysis_data[[col]], levels = all_levels)
-    scoring_data[[col]] <- factor(scoring_data[[col]], levels = all_levels)
-  }
-}
 
 #===============================================
 # Exploratory Data Analysis
@@ -279,7 +224,6 @@ data_recipe <- recipe(CTR ~ ., data = analysis_data) %>%
 
 # Apply preprocessing to both datasets
 analysis_data_transformed <- bake(data_recipe, new_data = analysis_data)
-scoring_data_transformed <- bake(data_recipe, new_data = scoring_data)
 
 # Visualize transformed numeric variables
 analysis_data_plot <- analysis_data_transformed %>% 
@@ -309,12 +253,10 @@ test = analysis_data_transformed[-split,]
 # Clean column names for consistency
 train <- train %>% clean_names()
 test <- test %>% clean_names()
-scoring_dummy <- scoring_dummy %>% clean_names()
 
 # Verify column names
 names(train)
 names(test)
-names(scoring_dummy)
 
 # Standardize target variable name
 train <- train %>% rename(CTR = ctr)
@@ -351,10 +293,6 @@ train_input = prepare(treatmentplan = trt,
 test_input = prepare(treatmentplan = trt, 
                      dframe = test,
                      varRestriction = newvars)
-
-scoring_input = prepare(treatmentplan = trt, 
-                        dframe = scoring_data_transformed,
-                        varRestriction = newvars)
 
 #===============================================
 # Grid Search with Treated Data
@@ -424,7 +362,6 @@ final_model <- xgboost(
 # Make predictions
 pred_train <- predict(final_model, as.matrix(train_input))
 pred_test <- predict(final_model, as.matrix(test_input))
-pred_scoring <- predict(final_model, as.matrix(scoring_input))
 
 # Calculate RMSE
 rmse_train <- sqrt(mean((pred_train - train$CTR)^2))
@@ -435,16 +372,19 @@ cat("\nFinal Performance Metrics:\n")
 cat("Train RMSE:", round(rmse_train, 6), "\n")
 cat("Test RMSE:", round(rmse_test, 6), "\n")
 
-#===============================================
-# Create Submission
-#===============================================
-# Create submission dataframe
+# ====================================
+# Generate predictions and save results
+# ====================================
+# Create prediction matrix using same treatment plan as training
+analysis_input = prepare(treatmentplan = trt,
+                         dframe = analysis_data_transformed,
+                         varRestriction = newvars)
+predictions <- predict(final_model, as.matrix(analysis_input))
+# Create submission with all predictions
 submission <- data.frame(
-  id = scoring_data$id,
-  CTR = pred_scoring
+  id = analysis_data$id,
+  CTR = predictions
 )
 
-# Save predictions
-write.csv(submission, 
-          "submission22.csv", 
-          row.names = FALSE)
+# Save with relative path
+write.csv(submission, "output/submission_final.csv", row.names = FALSE)
