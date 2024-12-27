@@ -39,6 +39,7 @@ str(analysis_data)
 #===============================================
 # Data Type Conversion
 #===============================================
+
 # Define columns that should be treated as factors
 cols_to_factor <- c("contextual_relevance", "seasonality", "headline_power_words",
                     "headline_question", "headline_numbers")
@@ -49,6 +50,7 @@ analysis_data[cols_to_factor] <- lapply(analysis_data[cols_to_factor], as.factor
 #===============================================
 # Data Quality Checks
 #===============================================
+
 # Check for duplicate IDs
 analysis_data %>%
   group_by(id) %>%
@@ -120,6 +122,7 @@ for(var in zero_one_vars) {
 #===============================================
 # Feature Engineering
 #===============================================
+
 # Create new features in analysis data
 analysis_data <- analysis_data %>%
   mutate(
@@ -213,6 +216,7 @@ print(summary(analysis_data$body_readability_score))
 #===============================================
 # Feature Preprocessing
 #===============================================
+
 # Create recipe for preprocessing
 data_recipe <- recipe(CTR ~ ., data = analysis_data) %>%
   step_impute_mode(all_nominal_predictors()) %>%   # Impute missing categorical values with mode
@@ -241,6 +245,7 @@ print(analysis_data_plot)
 #===============================================
 # Train-Test Split
 #===============================================
+
 # Create 80-20 split for training and testing
 set.seed(1031)
 split = createDataPartition(y = analysis_data_transformed$CTR, p = 0.8, list = F)
@@ -250,6 +255,7 @@ test = analysis_data_transformed[-split,]
 #===============================================
 # Final Data Cleaning
 #===============================================
+
 # Clean column names for consistency
 train <- train %>% clean_names()
 test <- test %>% clean_names()
@@ -265,6 +271,7 @@ test <- test %>% rename(CTR = ctr)
 #===============================================
 # Hyperparameter Grid Setup
 #===============================================
+
 # Create simplified grid with focused parameter ranges
 xgb_grid <- expand.grid(
   eta = c(0.05, 0.1),              # Learning rate - moderate values for balance
@@ -278,6 +285,7 @@ xgb_grid <- expand.grid(
 #===============================================
 # Data Treatment Setup
 #===============================================
+
 # Create treatment plan for variables
 trt = designTreatmentsZ(dframe = train,
                         varlist = names(train)[1:10])
@@ -297,6 +305,7 @@ test_input = prepare(treatmentplan = trt,
 #===============================================
 # Grid Search with Treated Data
 #===============================================
+
 # Initialize results storage
 results <- data.frame()
 
@@ -336,6 +345,7 @@ for(i in 1:nrow(xgb_grid)) {
 #===============================================
 # Final Model Training with Best Parameters
 #===============================================
+
 # Find best parameters
 best_idx <- which.min(results$test_rmse)
 best_params <- as.list(results[best_idx, names(xgb_grid)])
@@ -359,6 +369,7 @@ final_model <- xgboost(
 #===============================================
 # Generate Predictions
 #===============================================
+
 # Make predictions
 pred_train <- predict(final_model, as.matrix(train_input))
 pred_test <- predict(final_model, as.matrix(test_input))
@@ -375,11 +386,13 @@ cat("Test RMSE:", round(rmse_test, 6), "\n")
 # ====================================
 # Generate predictions and save results
 # ====================================
+
 # Create prediction matrix using same treatment plan as training
 analysis_input = prepare(treatmentplan = trt,
                          dframe = analysis_data_transformed,
                          varRestriction = newvars)
 predictions <- predict(final_model, as.matrix(analysis_input))
+
 # Create submission with all predictions
 submission <- data.frame(
   id = analysis_data$id,
