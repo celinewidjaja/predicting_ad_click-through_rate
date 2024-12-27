@@ -398,4 +398,4 @@ submission <- data.frame(
 )
 
 # Save with relative path
-write.csv(submission, "output/submission_final.csv", row.names = FALSE)
+write.csv(submission, "output/prediction_final.csv", row.names = FALSE)
