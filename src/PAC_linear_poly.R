@@ -28,76 +28,60 @@ set.seed(1031)
 
 # Load analysis and scoring datasets
 analysis_data = read.csv('/Users/celinewidjaja/Desktop/predicting-clicks/analysis_data.csv', stringsAsFactors = TRUE)
-scoring_data = read.csv('/Users/celinewidjaja/Desktop/predicting-clicks/scoring_data.csv', stringsAsFactors = TRUE)
 
 # Examine data structure
 str(analysis_data)
-str(scoring_data)
 
 # ====================================
-# Data preprocessing
+# Initial data preprocessing
 # ====================================
 
-# Convert specified columns to factors
+# Define categorical variables that need to be converted to factors
 cols_to_factor <- c("contextual_relevance", "seasonality", "headline_power_words",
                     "headline_question", "headline_numbers")
 
+# Convert specified columns to factors
 analysis_data[cols_to_factor] <- lapply(analysis_data[cols_to_factor], as.factor)
-scoring_data[cols_to_factor] <- lapply(scoring_data[cols_to_factor], as.factor)
 
-# Check for duplicate IDs
+# Check for duplicate IDs in the analysis dataset
 analysis_data %>%
   group_by(id) %>%
   count()%>%
-  filter(n==1) # Confirms no duplicates - all 4,000 rows have unique id
+  filter(n==1) # Verifies that all 4,000 rows have unique IDs
 
 # ====================================
 # Missing data analysis
 # ====================================
 
-# Evaluate missing data patterns
+# Examine missing values
 skim(analysis_data)
-skim(scoring_data)
 
 # ====================================
 # Data validation and range checking
 # ====================================
 
-# Function to analyze correlations and handle out-of-range values
-analyze_numeric <- function(analysis_df, scoring_df, column, min_val, max_val, cap) {
-  # Check correlation with CTR
+# Function to analyze correlations with target and handle out-of-range values
+analyze_numeric <- function(analysis_df, column, min_val, max_val, cap) {
+  # Check correlation with target variable (CTR)
   if(column != "CTR") {
     orig_cor <- cor(analysis_df[[column]], analysis_df$CTR, use = "complete.obs")
-    cat(sprintf("\nOriginal correlation with CTR for %s: %.3f\n", column, orig_cor))
+    cat(sprintf("\nCorrelation with CTR for %s: %.3f\n", column, orig_cor))
   }
   
-  # Identify out-of-range values
+  # Count values outside valid range
   out_range_analysis <- sum(analysis_df[[column]] < min_val | analysis_df[[column]] > max_val, na.rm = TRUE)
-  out_range_scoring <- sum(scoring_df[[column]] < min_val | scoring_df[[column]] > max_val, na.rm = TRUE)
-  cat(sprintf("\n## %s:\n", column))
-  cat(sprintf("Analysis: %d out of range values\n", out_range_analysis))
-  cat(sprintf("Scoring: %d out of range values\n", out_range_scoring))
+  cat(sprintf("\n%s: %d out of range values\n", column, out_range_analysis))
   
-  # Cap values if specified
+  # Cap values at min/max if specified
   if(cap) {
     analysis_df[[column]] <- ifelse(analysis_df[[column]] < min_val, min_val,
                                     ifelse(analysis_df[[column]] > max_val, max_val, 
                                            analysis_df[[column]]))
-    if(column != "CTR") {
-      scoring_df[[column]] <- ifelse(scoring_df[[column]] < min_val, min_val,
-                                     ifelse(scoring_df[[column]] > max_val, max_val, 
-                                            scoring_df[[column]]))
-      
-      new_cor <- cor(analysis_df[[column]], analysis_df$CTR, use = "complete.obs")
-      cat(sprintf("Correlation after capping: %.3f\n", new_cor))
-    }
-    cat(sprintf("Values capped for %s\n", column))
   }
-  
-  return(list(analysis_df = analysis_df, scoring_df = scoring_df))
+  return(analysis_df)
 }
 
-# Define numeric variable constraints
+# Define valid ranges and capping rules for numeric variables
 numeric_vars <- list(
   list(col = "targeting_score", min = 1, max = 10, cap = FALSE),
   list(col = "visual_appeal", min = 1, max = 10, cap = FALSE), 
@@ -106,30 +90,29 @@ numeric_vars <- list(
   list(col = "market_saturation", min = 1, max = 10, cap = TRUE),
   list(col = "body_keyword_density", min = 0, max = 1, cap = FALSE),
   list(col = "body_readability_score", min = 1, max = 100, cap = FALSE),
-  list(col = "CTR", min = 0, max = 1, cap = TRUE)
+  list(col = "CTR", min = 0, max = 1, cap = TRUE)  # Target variable
 )
 
+# Define categorical variables
 categorical_vars <- c("contextual_relevance", "age_group", "gender", "location",
                       "headline_power_words", "headline_question", "headline_numbers",
                       "seasonality")
 
-# Process numeric variables
+# Apply range validation and capping to numeric variables
 for(var in numeric_vars) {
-  results <- analyze_numeric(analysis_data, scoring_data, var$col, var$min, var$max, var$cap)
-  analysis_data <- results$analysis_df
-  scoring_data <- results$scoring_df
+  analysis_data <- analyze_numeric(analysis_data, var$col, var$min, var$max, var$cap)
 }
 
-# Check range for specific variables
+# ====================================
+# Range validation for special variables
+# ====================================
+
+# Check variables that should be between 0 and 1
 zero_one_vars <- c("body_keyword_density", "body_readability_score")
 for(var in zero_one_vars) {
   analysis_range <- any(analysis_data[[var]] > 1 | analysis_data[[var]] < 0, na.rm = TRUE)
-  scoring_range <- any(scoring_data[[var]] > 1 | scoring_data[[var]] < 0, na.rm = TRUE)
   
-  cat(sprintf("\n## %s range check:\n", var))
-  cat("Analysis data out of range:", analysis_range, "\n")
-  cat("Scoring data out of range:", scoring_range, "\n")
-}
+  cat(sprintf("\n## %s range check:\n", var, analysis_range))
 
 # ====================================
 # Feature engineering
@@ -158,23 +141,6 @@ create_poly_features <- function(data) {
 
 # Apply polynomial transformations to both datasets
 analysis_data <- create_poly_features(analysis_data)
-scoring_data <- create_poly_features(scoring_data)
-
-# Harmonize factor levels between datasets
-categorical_cols <- names(analysis_data)[sapply(analysis_data, is.factor)]
-
-for (col in categorical_cols) {
-  if (col %in% names(scoring_data)) {
-    analysis_data[[col]] <- as.character(analysis_data[[col]])
-    scoring_data[[col]] <- as.character(scoring_data[[col]])
-    
-    all_levels <- unique(c(analysis_data[[col]], scoring_data[[col]]))
-    all_levels <- all_levels[!is.na(all_levels)]
-    
-    analysis_data[[col]] <- factor(analysis_data[[col]], levels = all_levels)
-    scoring_data[[col]] <- factor(scoring_data[[col]], levels = all_levels)
-  }
-}
 
 # ====================================
 # Exploratory data analysis
@@ -218,7 +184,6 @@ data_recipe <- recipe(CTR ~ ., data = analysis_data) %>%
   prep()
 
 analysis_data_transformed <- bake(data_recipe, new_data = analysis_data)
-scoring_data_transformed <- bake(data_recipe, new_data = scoring_data)
 
 # Visualize transformed numeric variables
 analysis_data_plot <- analysis_data_transformed %>% 
@@ -508,7 +473,7 @@ r2_test_model2
 # ====================================
 
 # Build final model based on best subset selection results
-linear_model12 <- lm(CTR ~ poly(targeting_score, 2) + 
+linearpoly_model <- lm(CTR ~ poly(targeting_score, 2) + 
                        poly(visual_appeal, 2) + 
                        poly(headline_length, 2) + 
                        poly(cta_strength, 2) + 
@@ -547,17 +512,17 @@ linear_model12 <- lm(CTR ~ poly(targeting_score, 2) +
                      data=train)
 
 # Check for multicollinearity
-vif(linear_model12)
+vif(linearpoly_model)
 
 # Model summary
-summary(linear_model12)
+summary(linearpoly_model)
 
 # ====================================
 # Final model evaluation
 # ====================================
 
 # Calculate training metrics
-pred = predict(linear_model12, newdata = train)
+pred = predict(linearpoly_model, newdata = train)
 sse14 = sum((pred - train$CTR)^2)
 sst14 = sum((mean(train$CTR)-train$CTR)^2)
 model14_r2 = 1 - sse14/sst14
@@ -568,6 +533,22 @@ rmse14 = sqrt(mean((pred - train$CTR)^2))
 rmse14
 
 # Calculate RMSE for test data
-pred_test = predict(linear_model12, newdata = test)
+pred_test = predict(linearpoly_model, newdata = test)
 rmse14_test = sqrt(mean((pred_test - test$CTR)^2))
 rmse14_test
+
+# ====================================
+# Generate predictions and save results
+# ====================================
+  
+# Generate predictions for full dataset
+predictions <- predict(linearpoly_model, analysis_data_transformed)
+
+# Create submission with all predictions
+submission <- data.frame(
+  id = analysis_data$id,
+  CTR = predictions
+)
+
+# Save with relative path
+write.csv(submission, "output/submission_linearpoly.csv", row.names = FALSE)
