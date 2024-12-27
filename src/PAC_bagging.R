@@ -17,6 +17,11 @@ library(tidyr)
 library(tidyverse)
 library(forcats)
 
+#Add directory creation
+if (!dir.exists("output")) {
+  dir.create("output")
+}
+
 # Set random seed for reproducibility
 set.seed(1031)
 
@@ -25,12 +30,10 @@ set.seed(1031)
 # ====================================
 
 # Import the training (analysis) and testing (scoring) datasets
-analysis_data = read.csv('/Users/celinewidjaja/Desktop/predicting-clicks/analysis_data.csv', stringsAsFactors = TRUE)
-scoring_data = read.csv('/Users/celinewidjaja/Desktop/predicting-clicks/scoring_data.csv', stringsAsFactors = TRUE)
+analysis_data = analysis_data = read.csv('data/analysis_data.csv', stringsAsFactors = TRUE)
 
 # Examine data structure
 str(analysis_data)
-str(scoring_data)
 
 # ====================================
 # Initial data preprocessing
@@ -40,9 +43,8 @@ str(scoring_data)
 cols_to_factor <- c("contextual_relevance", "seasonality", "headline_power_words",
                     "headline_question", "headline_numbers")
 
-# Convert specified columns to factors in both datasets
+# Convert specified columns to factors
 analysis_data[cols_to_factor] <- lapply(analysis_data[cols_to_factor], as.factor)
-scoring_data[cols_to_factor] <- lapply(scoring_data[cols_to_factor], as.factor)
 
 # Check for duplicate IDs in the analysis dataset
 analysis_data %>%
@@ -54,46 +56,32 @@ analysis_data %>%
 # Missing data analysis
 # ====================================
 
-# Examine missing values in both datasets
+# Examine missing values
 skim(analysis_data)
-skim(scoring_data)
 
 # ====================================
 # Data validation and range checking
 # ====================================
 
 # Function to analyze correlations with target and handle out-of-range values
-analyze_numeric <- function(analysis_df, scoring_df, column, min_val, max_val, cap) {
+analyze_numeric <- function(analysis_df, column, min_val, max_val, cap) {
   # Check correlation with target variable (CTR)
   if(column != "CTR") {
     orig_cor <- cor(analysis_df[[column]], analysis_df$CTR, use = "complete.obs")
-    cat(sprintf("\nOriginal correlation with CTR for %s: %.3f\n", column, orig_cor))
+    cat(sprintf("\nCorrelation with CTR for %s: %.3f\n", column, orig_cor))
   }
   
   # Count values outside valid range
   out_range_analysis <- sum(analysis_df[[column]] < min_val | analysis_df[[column]] > max_val, na.rm = TRUE)
-  out_range_scoring <- sum(scoring_df[[column]] < min_val | scoring_df[[column]] > max_val, na.rm = TRUE)
-  cat(sprintf("\n## %s:\n", column))
-  cat(sprintf("Analysis: %d out of range values\n", out_range_analysis))
-  cat(sprintf("Scoring: %d out of range values\n", out_range_scoring))
+  cat(sprintf("\n%s: %d out of range values\n", column, out_range_analysis))
   
   # Cap values at min/max if specified
   if(cap) {
     analysis_df[[column]] <- ifelse(analysis_df[[column]] < min_val, min_val,
                                     ifelse(analysis_df[[column]] > max_val, max_val, 
                                            analysis_df[[column]]))
-    if(column != "CTR") {
-      scoring_df[[column]] <- ifelse(scoring_df[[column]] < min_val, min_val,
-                                     ifelse(scoring_df[[column]] > max_val, max_val, 
-                                            scoring_df[[column]]))
-      
-      new_cor <- cor(analysis_df[[column]], analysis_df$CTR, use = "complete.obs")
-      cat(sprintf("Correlation after capping: %.3f\n", new_cor))
-    }
-    cat(sprintf("Values capped for %s\n", column))
   }
-  
-  return(list(analysis_df = analysis_df, scoring_df = scoring_df))
+  return(list(analysis_df))
 }
 
 # Define valid ranges and capping rules for numeric variables
@@ -115,9 +103,7 @@ categorical_vars <- c("contextual_relevance", "age_group", "gender", "location",
 
 # Apply range validation and capping to numeric variables
 for(var in numeric_vars) {
-  results <- analyze_numeric(analysis_data, scoring_data, var$col, var$min, var$max, var$cap)
-  analysis_data <- results$analysis_df
-  scoring_data <- results$scoring_df
+  analysis_data <- validate_numeric(analysis_data, var$col, var$min, var$max, var$cap)
 }
 
 # ====================================
@@ -128,34 +114,8 @@ for(var in numeric_vars) {
 zero_one_vars <- c("body_keyword_density", "body_readability_score")
 for(var in zero_one_vars) {
   analysis_range <- any(analysis_data[[var]] > 1 | analysis_data[[var]] < 0, na.rm = TRUE)
-  scoring_range <- any(scoring_data[[var]] > 1 | scoring_data[[var]] < 0, na.rm = TRUE)
   
-  cat(sprintf("\n## %s range check:\n", var))
-  cat("Analysis data out of range:", analysis_range, "\n")
-  cat("Scoring data out of range:", scoring_range, "\n")
-}
-
-# ====================================
-# Factor level harmonization
-# ====================================
-
-# Ensure factor levels match between datasets
-categorical_cols <- names(analysis_data)[sapply(analysis_data, is.factor)]
-
-for (col in categorical_cols) {
-  if (col %in% names(scoring_data)) {
-    # Convert to character for level matching
-    analysis_data[[col]] <- as.character(analysis_data[[col]])
-    scoring_data[[col]] <- as.character(scoring_data[[col]])
-    
-    # Get unified set of levels
-    all_levels <- unique(c(analysis_data[[col]], scoring_data[[col]]))
-    all_levels <- all_levels[!is.na(all_levels)]
-    
-    # Convert back to factor with harmonized levels
-    analysis_data[[col]] <- factor(analysis_data[[col]], levels = all_levels)
-    scoring_data[[col]] <- factor(scoring_data[[col]], levels = all_levels)
-  }
+  cat(sprintf("\n## %s range check:\n", var, analysis_range))
 }
 
 # ====================================
@@ -202,7 +162,6 @@ data_recipe <- recipe(CTR ~ ., data = analysis_data) %>%
 
 # Apply preprocessing transformations
 analysis_data_transformed <- bake(data_recipe, new_data = analysis_data)
-scoring_data_transformed <- bake(data_recipe, new_data = scoring_data)
 
 # ====================================
 # Post-transformation visualization
@@ -263,14 +222,10 @@ rmse_test_bag_ipred
 # ====================================
 # Generate predictions and save results
 # ====================================
-
-# Generate predictions for scoring data
-pred_scoring = predict(bag1, newdata = scoring_data_transformed)
-
 # Create submission file with predictions
-submission <- scoring_data %>%
+submission <- analysis_data %>%
   dplyr::select(id) %>%
-  mutate(CTR = pred_scoring)
+  mutate(CTR = pred_test)
 
 # Save predictions to CSV
-write.csv(submission, "/Users/celinewidjaja/Desktop/predicting-clicks/submission_bag.csv", row.names = FALSE)
+write.csv(submission, "output/submission_bag.csv", row.names = FALSE)
