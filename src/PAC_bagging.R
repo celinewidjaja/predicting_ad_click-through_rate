@@ -17,11 +17,6 @@ library(tidyr)
 library(tidyverse)
 library(forcats)
 
-#Add directory creation
-if (!dir.exists("output")) {
-  dir.create("output")
-}
-
 # Set random seed for reproducibility
 set.seed(1031)
 
@@ -29,7 +24,7 @@ set.seed(1031)
 # Data loading and initial inspection
 # ====================================
 
-# Import the training (analysis) and testing (scoring) datasets
+# Import dataset
 analysis_data = read.csv('data/analysis_data.csv', stringsAsFactors = TRUE)
 
 # Examine data structure
@@ -46,7 +41,7 @@ cols_to_factor <- c("contextual_relevance", "seasonality", "headline_power_words
 # Convert specified columns to factors
 analysis_data[cols_to_factor] <- lapply(analysis_data[cols_to_factor], as.factor)
 
-# Check for duplicate IDs in the analysis dataset
+# Check for duplicate IDs
 analysis_data %>%
   group_by(id) %>%
   count()%>%
@@ -192,8 +187,10 @@ ggplot(data=analysis_data_transformed,aes(x='',y=CTR))+
 # Train/test split
 # ====================================
 
-# Split data into training (80%) and test (20%) sets
+# Set seed
 set.seed(1031)
+
+# Split data into training (80%) and test (20%) sets
 split = createDataPartition(y = analysis_data_transformed$CTR, p = 0.8, list = F)
 train = analysis_data_transformed[split,]
 test = analysis_data_transformed[-split,]
