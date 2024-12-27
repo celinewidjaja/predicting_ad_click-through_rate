@@ -208,4 +208,4 @@ submission <- data.frame(
 )
 
 # Save with relative path
-write.csv(submission, "output/submission_linear.csv", row.names = FALSE)
+write.csv(submission, "output/prediction_linear.csv", row.names = FALSE)
