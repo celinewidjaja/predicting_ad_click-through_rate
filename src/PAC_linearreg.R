@@ -199,7 +199,7 @@ rmse10_test = sqrt(mean((test_pred - test$CTR)^2)); rmse10_test
 # ====================================
 
 # Generate predictions for full dataset
-predictions <- predict(linear_model, analysis_data_transformed)
+predictions <- predict(linear_model, analysis_dummy)
 
 # Create submission with all predictions
 submission <- data.frame(
