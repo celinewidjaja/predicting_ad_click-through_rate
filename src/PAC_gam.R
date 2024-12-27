@@ -26,10 +26,10 @@ set.seed(1031)
 # Data Loading and Initial Inspection
 #===============================================
 
-# Load training (analysis) and scoring datasets
+# Load dataset
 analysis_data = read.csv('data/analysis_data.csv', stringsAsFactors = TRUE)
 
-# Inspect the structure of the datasets
+# Inspect the structure
 str(analysis_data)
 
 #===============================================
