@@ -1,6 +1,7 @@
 #===============================================
 # Initial Setup and Library Loading
 #===============================================
+
 # Load necessary libraries for data manipulation, visualization, and modeling
 library(skimr)
 library(dplyr)
@@ -148,6 +149,7 @@ print(categorical_plot)
 #===============================================
 # Feature Engineering with Recipes
 #===============================================
+
 # Create preprocessing recipe
 data_recipe <- recipe(CTR ~ ., data = analysis_data) %>%
   step_impute_mode(all_nominal_predictors()) %>%
@@ -161,6 +163,7 @@ analysis_data_transformed <- bake(data_recipe, new_data = analysis_data)
 #===============================================
 # Train-Test Split
 #===============================================
+
 # Split the transformed data into training and testing sets
 split <- createDataPartition(y = analysis_data_transformed$CTR, p = 0.8, list = FALSE)
 train <- analysis_data_transformed[split, ]
@@ -169,6 +172,7 @@ test <- analysis_data_transformed[-split, ]
 #===============================================
 # GAM Model Training and Evaluation
 #===============================================
+
 # Fit a GAM model to the training data
 names(train)
 gam1 <- gam(
@@ -195,6 +199,7 @@ summary(gam1)
 #===============================================
 # Evaluate Model Performance
 #===============================================
+
 # Predict on train and test sets
 pred_train <- predict(gam1, newdata = train)
 rmse_train <- sqrt(mean((pred_train - train$CTR)^2))
@@ -207,6 +212,7 @@ cat("Test RMSE:", rmse_test, "\n")
 # ====================================
 # Generate predictions and save results
 # ====================================
+
 # Generate predictions for full dataset
 predictions <- predict(gam1, analysis_data_transformed)
 
