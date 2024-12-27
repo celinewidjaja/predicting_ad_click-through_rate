@@ -18,6 +18,11 @@ library(tidyverse)
 library(forcats)
 library(mgcv)
 library(gridExtra)
+library(leaps)
+library(broom)
+library(car)
+library(MASS)
+library(glmnet)
 
 # Set random seed for reproducibility
 set.seed(1031)
@@ -26,7 +31,7 @@ set.seed(1031)
 # Data loading and initial inspection
 # ====================================
 
-# Load analysis and scoring datasets
+# Load dataset
 analysis_data = read.csv('data/analysis_data.csv', stringsAsFactors = TRUE)
 
 # Examine data structure
@@ -43,7 +48,7 @@ cols_to_factor <- c("contextual_relevance", "seasonality", "headline_power_words
 # Convert specified columns to factors
 analysis_data[cols_to_factor] <- lapply(analysis_data[cols_to_factor], as.factor)
 
-# Check for duplicate IDs in the analysis dataset
+# Check for duplicate IDs
 analysis_data %>%
   group_by(id) %>%
   count()%>%
@@ -139,7 +144,7 @@ create_poly_features <- function(data) {
     )
 }
 
-# Apply polynomial transformations to both datasets
+# Apply polynomial transformations
 analysis_data <- create_poly_features(analysis_data)
 
 # ====================================
@@ -210,7 +215,10 @@ ggplot(data=analysis_data_transformed,aes(x='',y=CTR))+
 # Train/test split
 # ====================================
 
+# Set seed
 set.seed(1031)
+
+# Split data into training (80%) and test (20%) sets
 split = createDataPartition(y = analysis_data_transformed$CTR, p = 0.8, list = F)
 train = analysis_data_transformed[split,]
 test = analysis_data_transformed[-split,]
@@ -239,12 +247,10 @@ model = lm(CTR~.,train)
 summary(model)
 
 # Print tidy summary
-library(broom)
 summary(model) %>%
   tidy()
 
 # Check multicollinearity
-library(car)
 vif(model)
 
 # Visualize VIF values
@@ -262,7 +268,6 @@ data.frame(Predictor = names(vif(model)), VIF = vif(model)) %>%
 # Best subset selection
 # ====================================
 
-library(leaps)
 subsets = regsubsets(CTR~.,data=train, nvmax=15, really.big=T)
 summary(subsets)
 
@@ -322,7 +327,6 @@ empty_mod = lm(CTR~1,data=train)
 full_mod = lm(CTR~.,data=train)
 
 # Perform backward selection
-library(MASS)
 backwardStepwise = stepAIC(start_mod, 
                            scope=list(upper=full_mod, lower=empty_mod),
                            direction="backward",
@@ -372,7 +376,6 @@ hybridStepwise$anova %>%
 # Ridge regression
 # ====================================
 
-library(glmnet)
 # Prepare model matrix
 x = model.matrix(CTR~.-1,data=train)
 y = train$CTR
@@ -417,8 +420,10 @@ ggplot(plot_df, aes(x = log(lambda), y = coefficient, color = feature)) +
 # Lasso regression
 # ====================================
 
-# Fit lasso model
+# Set seed
 set.seed(617)
+  
+# Fit lasso model
 cv_lasso = cv.glmnet(x = x, 
                      y = y, 
                      alpha = 1,
@@ -437,7 +442,6 @@ coef(cv_lasso, s = cv_lasso$lambda.1se) %>%
 # ====================================
 
 # Prepare data for PCA
-library(dplyr)
 trainPredictors = train %>% 
   dplyr::select(-"CTR", -"id")
 
@@ -445,7 +449,6 @@ testPredictors = test %>%
   dplyr::select(-"id")
 
 # Perform PCA
-library(caret)
 x = preProcess(x = trainPredictors,method = 'pca',thresh = 0.8)
 x
 
