@@ -81,7 +81,7 @@ analyze_numeric <- function(analysis_df, column, min_val, max_val, cap) {
                                     ifelse(analysis_df[[column]] > max_val, max_val, 
                                            analysis_df[[column]]))
   }
-  return(list(analysis_df))
+  return(analysis_df)
 }
 
 # Define valid ranges and capping rules for numeric variables
@@ -222,10 +222,14 @@ rmse_test_bag_ipred
 # ====================================
 # Generate predictions and save results
 # ====================================
-# Create submission file with predictions
-submission <- analysis_data %>%
-  dplyr::select(id) %>%
-  mutate(CTR = pred_test)
+# Generate predictions for full dataset
+predictions <- predict(bag1, analysis_data_transformed)
+
+# Create submission with all predictions
+submission <- data.frame(
+  id = analysis_data$id,
+  CTR = predictions
+)
 
 # Save predictions to CSV
 write.csv(submission, "output/submission_bag.csv", row.names = FALSE)
