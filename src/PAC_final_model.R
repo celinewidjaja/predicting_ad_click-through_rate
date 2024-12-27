@@ -221,7 +221,7 @@ data_recipe <- recipe(CTR ~ ., data = analysis_data) %>%
   step_normalize(all_numeric_predictors()) %>%     # Normalize numeric values
   prep()
 
-# Apply preprocessing to both datasets
+# Apply preprocessing
 analysis_data_transformed <- bake(data_recipe, new_data = analysis_data)
 
 # Visualize transformed numeric variables
