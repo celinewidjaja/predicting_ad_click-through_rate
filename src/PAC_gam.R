@@ -26,7 +26,7 @@ set.seed(1031)
 #===============================================
 
 # Load training (analysis) and scoring datasets
-analysis_data <- read.csv('/Users/celinewidjaja/Desktop/predicting-clicks/analysis_data.csv', stringsAsFactors = TRUE)
+analysis_data <- read.csv('data/analysis_data.csv', stringsAsFactors = TRUE)
 
 # Inspect the structure of the datasets
 str(analysis_data)
