@@ -40,14 +40,14 @@ str(analysis_data)
 cols_to_factor <- c("contextual_relevance", "seasonality", "headline_power_words",
                     "headline_question", "headline_numbers")
 
-# Convert specified columns to factors in both datasets
+# Convert specified columns to factors
 analysis_data[cols_to_factor] <- lapply(analysis_data[cols_to_factor], as.factor)
 
 #===============================================
 # Data Quality Checks
 #===============================================
 
-# Check for duplicate IDs in the analysis dataset
+# Check for duplicate IDs
 analysis_data %>%
   group_by(id) %>%
   count() %>%
@@ -157,14 +157,16 @@ data_recipe <- recipe(CTR ~ ., data = analysis_data) %>%
   step_impute_mean(all_numeric_predictors()) %>%
   prep()
 
-# Apply preprocessing to datasets
+# Apply preprocessing
 analysis_data_transformed <- bake(data_recipe, new_data = analysis_data)
 
 #===============================================
 # Train-Test Split
 #===============================================
 
-# Split the transformed data into training and testing sets
+
+
+# Split data into training (80%) and test (20%) sets
 split <- createDataPartition(y = analysis_data_transformed$CTR, p = 0.8, list = FALSE)
 train <- analysis_data_transformed[split, ]
 test <- analysis_data_transformed[-split, ]
@@ -175,7 +177,7 @@ test <- analysis_data_transformed[-split, ]
 
 # Fit a GAM model to the training data
 names(train)
-gam1 <- gam(
+gam <- gam(
   CTR ~ 
     s(targeting_score) + 
     s(visual_appeal) + 
@@ -194,7 +196,7 @@ gam1 <- gam(
 )
 
 # Summarize the model
-summary(gam1)
+summary(gam)
 
 #===============================================
 # Evaluate Model Performance
@@ -214,7 +216,7 @@ cat("Test RMSE:", rmse_test, "\n")
 # ====================================
 
 # Generate predictions for full dataset
-predictions <- predict(gam1, analysis_data_transformed)
+predictions <- predict(gam, analysis_data_transformed)
 
 # Create submission with all predictions
 submission <- data.frame(
