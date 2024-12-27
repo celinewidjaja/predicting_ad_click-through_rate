@@ -59,6 +59,7 @@ Applied multiple techniques to identify key predictors:
 
 #### **3. Model Development:**
 Progressed through increasingly sophisticated approaches:  
+- Linear regression
 - Linear regression with polynomial terms
 - Generalized Additive Models (GAM) 
 - Bagging  
@@ -69,7 +70,7 @@ Progressed through increasingly sophisticated approaches:
 Created composite metrics including:  
 - Content quality score  
 - Peak hour engagement indicators  
-- Temporal pattern indicators.  
+- Temporal pattern indicators  
 
 ## Executive Summary
 Analysis of the digital advertising campaign data reveals that visual appeal is the strongest predictor of CTR (0.561 correlation), followed by targeting precision (0.394 correlation). Four key variables demonstrate important non-linear relationships with CTR: targeting score, visual appeal, CTA strength, and headline length. Mobile devices dominate traffic (69.7%), with peak engagement during afternoon hours (1,585 impressions). The analysis highlights the importance of optimizing visual content and targeting while considering temporal patterns in engagement. These insights led to a predictive model achieving strong performance (cross-validation RMSE: 0.05903), significantly improving upon baseline predictions.
