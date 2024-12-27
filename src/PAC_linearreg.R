@@ -14,7 +14,7 @@ set.seed(1031)
 # Data loading and initial inspection
 # ====================================
 
-# Load analysis and scoring datasets
+# Load dataset
 analysis_data = read.csv('data/analysis_data.csv', stringsAsFactors = TRUE)
 
 # Examine data structure
@@ -30,7 +30,7 @@ cols_to_factor <- c("contextual_relevance", "seasonality", "headline_power_words
 
 analysis_data[cols_to_factor] <- lapply(analysis_data[cols_to_factor], as.factor)
 
-# Check for duplicate IDs in analysis data
+# Check for duplicate IDs
 analysis_data %>%
   group_by(id) %>%
   count()%>%
@@ -75,15 +75,15 @@ impute_cats <- function(data, cols, props) {
   return(data)
 }
 
-# Apply categorical imputation to both datasets
+# Apply categorical imputation
 analysis_data <- impute_cats(analysis_data, cat_cols, props)
 
 # Impute missing numeric values
 num_cols <- names(analysis_data)[sapply(analysis_data, is.numeric)]
 
-# Perform mean imputation for numeric columns using analysis data means
+# Perform mean imputation for numeric columns using means
 for (col in num_cols) {
-  if (col %in% names(analysis_data) && col %in% names(scoring_data)) {
+  if (col %in% names(analysis_data)) {
     col_mean <- mean(analysis_data[[col]], na.rm = TRUE)
     analysis_data[[col]][is.na(analysis_data[[col]])] <- col_mean
   }
@@ -163,7 +163,10 @@ analysis_dummy$CTR <- analysis_data$CTR
 # Train/test split
 # ====================================
 
+# Set seed
 set.seed(1031)
+
+# Split dataset
 split = createDataPartition(y = analysis_dummy$CTR, p = 0.8, list = F)
 train = analysis_dummy[split,]
 test = analysis_dummy[-split,]
