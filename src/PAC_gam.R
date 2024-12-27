@@ -164,7 +164,8 @@ analysis_data_transformed <- bake(data_recipe, new_data = analysis_data)
 # Train-Test Split
 #===============================================
 
-
+# Set seed
+set.seed(1031)
 
 # Split data into training (80%) and test (20%) sets
 split <- createDataPartition(y = analysis_data_transformed$CTR, p = 0.8, list = FALSE)
@@ -203,11 +204,11 @@ summary(gam)
 #===============================================
 
 # Predict on train and test sets
-pred_train <- predict(gam1, newdata = train)
+pred_train <- predict(gam, newdata = train)
 rmse_train <- sqrt(mean((pred_train - train$CTR)^2))
 cat("Train RMSE:", rmse_train, "\n")
 
-pred_test <- predict(gam1, newdata = test)
+pred_test <- predict(gam, newdata = test)
 rmse_test <- sqrt(mean((pred_test - test$CTR)^2))
 cat("Test RMSE:", rmse_test, "\n")
 
