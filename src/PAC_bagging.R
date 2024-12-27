@@ -222,6 +222,7 @@ rmse_test_bag_ipred
 # ====================================
 # Generate predictions and save results
 # ====================================
+
 # Generate predictions for full dataset
 predictions <- predict(bag1, analysis_data_transformed)
 
