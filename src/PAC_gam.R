@@ -226,4 +226,4 @@ submission <- data.frame(
 )
 
 # Save with relative path
-write.csv(submission, "output/submission_gam.csv", row.names = FALSE)
+write.csv(submission, "output/prediction_gam.csv", row.names = FALSE)
