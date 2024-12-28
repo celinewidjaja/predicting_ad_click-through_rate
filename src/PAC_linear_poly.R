@@ -114,10 +114,12 @@ for(var in numeric_vars) {
 
 # Check variables that should be between 0 and 1
 zero_one_vars <- c("body_keyword_density", "body_readability_score")
+
 for(var in zero_one_vars) {
   analysis_range <- any(analysis_data[[var]] > 1 | analysis_data[[var]] < 0, na.rm = TRUE)
   
   cat(sprintf("\n## %s range check:\n", var, analysis_range))
+}
 
 # ====================================
 # Feature engineering
@@ -153,8 +155,8 @@ analysis_data <- create_poly_features(analysis_data)
 
 # Plot distributions of numeric variables
 numeric_plot <- analysis_data %>% 
-  select(-CTR, -id) %>%
-  select_if(is.numeric) %>%
+  dplyr::select(-CTR, -id) %>%
+  dplyr::select_if(is.numeric) %>%
   pivot_longer(everything(), names_to = 'predictor', values_to = 'values') %>%
   ggplot(aes(x = values)) +
   geom_histogram(fill = "skyblue", color = "black", bins = 30) +
@@ -164,8 +166,8 @@ numeric_plot <- analysis_data %>%
 
 # Plot distributions of categorical variables
 categorical_plot <- analysis_data %>% 
-  select(-CTR, -id) %>%
-  select_if(is.factor) %>%
+  dplyr::select(-CTR, -id) %>%
+  dplyr::select_if(is.factor) %>%
   pivot_longer(everything(), names_to = 'predictor', values_to = 'values') %>%
   ggplot(aes(x = values)) +
   geom_bar(fill = "lightgreen", color = "black") +
@@ -192,8 +194,8 @@ analysis_data_transformed <- bake(data_recipe, new_data = analysis_data)
 
 # Visualize transformed numeric variables
 analysis_data_plot <- analysis_data_transformed %>% 
-  select(-CTR, -id) %>%
-  select_if(is.numeric) %>%
+  dplyr::select(-CTR, -id) %>%
+  dplyr::select_if(is.numeric) %>%
   pivot_longer(everything(), names_to = 'predictor', values_to = 'values') %>%
   ggplot(aes(x = values)) +
   geom_histogram(fill = "skyblue", color = "black", bins = 30) +
@@ -475,6 +477,9 @@ r2_test_model2
 # Final model with selected features
 # ====================================
 
+# Double check names in train to input in model
+names(train)
+
 # Build final model based on best subset selection results
 linearpoly_model <- lm(CTR ~ poly(targeting_score, 2) + 
                        poly(visual_appeal, 2) + 
@@ -493,25 +498,25 @@ linearpoly_model <- lm(CTR ~ poly(targeting_score, 2) +
                        contextual_relevance_X1 + 
                        position_on_page_Side.Banner + 
                        position_on_page_Top.Banner +
-                       ad_format_Image + 
+                       ad_format_Text + 
                        ad_format_Video +
-                       age_group_X35.44 + age_group_X18.24 +
+                       age_group_X35.44 + age_group_X25.34 +
                        age_group_X45.54 + age_group_X65.74 +
                        age_group_X55.64 + age_group_X75.84 +
                        age_group_X85. + 
-                       gender_Female + gender_Other + 
+                       gender_Male + gender_Other + 
                        location_South + location_West + 
                        location_Northeast + 
-                       time_of_day_Afternoon + time_of_day_Evening + 
+                       time_of_day_Morning + time_of_day_Evening + 
                        time_of_day_Night + 
                        day_of_week_Wednesday + day_of_week_Thursday + 
-                       day_of_week_Friday + day_of_week_Monday + 
+                       day_of_week_Tuesday + day_of_week_Monday + 
                        day_of_week_Sunday + day_of_week_Saturday + 
                        device_type_Mobile + device_type_Tablet + 
-                       seasonality_X0 + 
-                       headline_power_words_X0 + 
-                       headline_question_X0 + 
-                       headline_numbers_X0, 
+                       seasonality_X1 + 
+                       headline_power_words_X1 + 
+                       headline_question_X1 + 
+                       headline_numbers_X1, 
                      data=train)
 
 # Check for multicollinearity
