@@ -237,6 +237,14 @@ analysis_data_plot <- analysis_data_transformed %>%
 
 print(analysis_data_plot)
 
+# Create boxplot to examine CTR outliers
+CTRplot <- ggplot(data=analysis_data_transformed,aes(x='',y=CTR))+
+  geom_boxplot(outlier.color='red',outlier.alpha=0.5, fill='cadetblue')+
+  geom_text(aes(x='',y=median(analysis_data_transformed$CTR),label=median(analysis_data_transformed$CTR)),size=3,hjust=11)+
+  xlab(label = '')+
+  theme_bw()+
+  labs(title = 'Identify Outliers', x = '')
+
 #===============================================
 # Train-Test Split
 #===============================================
@@ -399,3 +407,11 @@ submission <- data.frame(
 
 # Save with relative path
 write.csv(submission, "output/prediction_final.csv", row.names = FALSE)
+
+# Save visualizations
+dir.create("/Users/celinewidjaja/Desktop/predicting-clicks/output/figures", recursive = TRUE, showWarnings = FALSE)
+
+ggsave("/Users/celinewidjaja/Desktop/predicting-clicks/output/figures/numeric_distributions.png", numeric_plot, width=12, height=8)
+ggsave("/Users/celinewidjaja/Desktop/predicting-clicks/output/figures/categorical_distributions.png", categorical_plot, width=12, height=8)
+ggsave("/Users/celinewidjaja/Desktop/predicting-clicks/output/figures/transformed_distributions.png", analysis_data_plot, width=12, height=8)
+ggsave("/Users/celinewidjaja/Desktop/predicting-clicks/output/figures/ctr_outlier.png", CTR_plot, width=12, height=8)
