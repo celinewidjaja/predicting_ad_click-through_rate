@@ -243,7 +243,7 @@ CTRplot <- ggplot(data=analysis_data_transformed,aes(x='',y=CTR))+
   geom_text(aes(x='',y=median(analysis_data_transformed$CTR),label=median(analysis_data_transformed$CTR)),size=3,hjust=11)+
   xlab(label = '')+
   theme_bw()+
-  labs(title = 'Identify Outliers', x = '')
+  labs(title = 'Identify Outliers in CTR', x = '')
 
 #===============================================
 # Train-Test Split
