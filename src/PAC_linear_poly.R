@@ -206,7 +206,7 @@ analysis_data_plot <- analysis_data_transformed %>%
 print(analysis_data_plot)
 
 # Examine CTR outliers
-ggplot(data=analysis_data_transformed,aes(x='',y=CTR))+
+CTR_plot <- ggplot(data=analysis_data_transformed,aes(x='',y=CTR))+
   geom_boxplot(outlier.color='red',outlier.alpha=0.5, fill='cadetblue')+
   geom_text(aes(x='',y=median(analysis_data_transformed$CTR),label=median(analysis_data_transformed$CTR)),size=3,hjust=11)+
   xlab(label = '')+
@@ -231,7 +231,7 @@ test = analysis_data_transformed[-split,]
 
 # Visualize correlations
 library(ggcorrplot)
-ggcorrplot(cor(train),
+corplot <- ggcorrplot(cor(train),
            method = 'square',
            type = 'lower',
            show.diag = F,
@@ -256,7 +256,7 @@ summary(model) %>%
 vif(model)
 
 # Visualize VIF values
-data.frame(Predictor = names(vif(model)), VIF = vif(model)) %>%
+vif_plot <- data.frame(Predictor = names(vif(model)), VIF = vif(model)) %>%
   ggplot(aes(x=VIF, y = reorder(Predictor, VIF), fill=VIF))+
   geom_col()+
   geom_vline(xintercept=5, color = 'gray', size = 1.5)+
@@ -280,7 +280,7 @@ subsets_measures = data.frame(model=1:length(summary(subsets)$cp),
                               adjr2=summary(subsets)$adjr2)
 
 # Plot selection criteria
-subsets_measures %>%
+subset_selection_plot <- subsets_measures %>%
   gather(key = type, value=value, 2:4)%>%
   group_by(type)%>%
   mutate(best_value = factor(ifelse(value == min(value) | value== max(value),0,1)))%>%
@@ -310,7 +310,7 @@ forwardStepwise = stats::step(start_mod,
                               trace=FALSE)
 
 # Visualize AIC progression
-forwardStepwise$anova %>% 
+stepwise_plot <- forwardStepwise$anova %>% 
   mutate(step_number = as.integer(rownames(forwardStepwise$anova))-1) %>%
   mutate(Step = as.character(Step))%>%
   ggplot(aes(x = reorder(Step,X = step_number), y = AIC))+
@@ -338,7 +338,7 @@ backwardStepwise = stepAIC(start_mod,
 summary(backwardStepwise)
 
 # Visualize AIC progression
-backwardStepwise$anova %>% 
+backward_plot <- backwardStepwise$anova %>% 
   mutate(step_number = as.integer(rownames(backwardStepwise$anova))-1) %>%
   mutate(Step = as.character(Step))%>%
   ggplot(aes(x = reorder(Step,X = step_number), y = AIC))+
@@ -365,7 +365,7 @@ hybridStepwise = stepAIC(start_mod,
 summary(hybridStepwise)
 
 # Visualize AIC progression
-hybridStepwise$anova %>% 
+hybridstep_plot <- hybridStepwise$anova %>% 
   mutate(step_number = as.integer(rownames(hybridStepwise$anova))-1) %>%
   mutate(Step = as.character(Step))%>%
   ggplot(aes(x = reorder(Step,X = step_number), y = AIC))+
@@ -410,7 +410,7 @@ plot_df <- data.frame(
   filter(feature != "(Intercept)")
 
 # Plot ridge paths
-ggplot(plot_df, aes(x = log(lambda), y = coefficient, color = feature)) +
+ridge_plot <- ggplot(plot_df, aes(x = log(lambda), y = coefficient, color = feature)) +
   geom_line() +
   theme_bw() +
   labs(title = "Ridge Coefficient Paths",
@@ -560,3 +560,21 @@ submission <- data.frame(
 
 # Save with relative path
 write.csv(submission, "output/prediction_linearpoly.csv", row.names = FALSE)
+
+# Create output directories
+dir.create("output/figures", recursive = TRUE, showWarnings = FALSE)
+
+# Save EDA plots
+ggsave("output/figures/numeric_distributions.png", numeric_plot, width=12, height=8)
+ggsave("output/figures/categorical_distributions.png", categorical_plot, width=12, height=8)
+ggsave("output/figures/transformed_distributions.png", analysis_data_plot, width=12, height=8)
+ggsave("output/figures/ctr_outliers.png", CTR_plot, width=8, height=6)
+
+# Save analysis plots  
+ggsave("output/figures/correlation_matrix.png", corplot, width=10, height=8)
+ggsave("output/figures/vif_analysis.png", vif_plot, width=10, height=8)
+ggsave("output/figures/subset_selection.png", subset_selection_plot, width=10, height=8)
+ggsave("output/figures/stepwise_selection.png", stepwise_plot, width=10, height=6)
+ggsave("output/figures/backward_selection.png", backward_plot, width=10, height=6)
+ggsave("output/figures/hybrid_selection.png", hybridstep_plot, width=10, height=6)
+ggsave("output/figures/ridge_paths.png", ridge_plot, width=10, height=6)
